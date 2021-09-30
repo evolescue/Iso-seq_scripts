@@ -1,4 +1,4 @@
-# Isoseq3 and TAMA pipeline with Iso-seq data
+# Isoseq3 and TAMA pipeline using Iso-seq data
 
 ## Pacbio essencials
 
@@ -10,8 +10,8 @@ Single Molecule, Real-Time (SMRT) Sequencing technology has evolved to a differe
 ![alt text](https://ccs.how/img/generate-hifi.png)
 
 
-
-## Step 1: Circular Consensus Sequence (ccs) calling
+## Isoseq3 steps
+### Step 1: Circular Consensus Sequence (ccs) calling 
 
 Each sequencing run is processed by ccs to generate one representative circular consensus sequence (CCS) for each ZMW.
 Input: Subreads from a single movie in PacBio BAM format (```.subreads.bam```).
@@ -21,7 +21,7 @@ or SMRT Link XML (```.consensusreadset.xml```) which also generates a correspond
 ```bash
 ccs duck.subreads.bam duck.ccs.bam --min-rq 0.9
 ```
-### Parallelize by chunk
+#### Parallelize by chunk
 
 For this, the .subreads.bam file must accompanied by a ```.pbi``` file. To generate the index ```subreads.bam.pbi```, use ```pbindex```, which can be installed with ```conda install pbbam```.
 ```bash
@@ -43,7 +43,7 @@ or use samtools
 ```bash
 samtools merge -@8 duck.ccs.bam duck.ccs.*.bam
 ```
-## Step 2: Primer removal and demultiplexing
+### Step 2: Primer removal and demultiplexing
 Removal of primers and identification of barcodes is performed using lima that offers a specialized ```--isoseq``` mode. 
 If there are more than two sequences in your primer.fasta file or better said more than one pair of 5' and 3' primers.
 Use lima with ```--peek-guess``` to remove spurious false positive signal. Lima will remove unwanted combinations and orient sequences to 5' → 3' orientation.
@@ -52,7 +52,7 @@ lima duck.ccs.bam barcoded_primers.fasta duck.fl.bam --isoseq --peek-guess
 ```
 Output files will be called according to their primer pair. Example for single sample libraries: ```movieX.fl.NEB_5p--NEB_Clontech_3p.bam```
 
-## Step 3: Refine
+### Step 3: Refine
 data now contains full-length reads, but still needs to be refined by:
 
 a)Trimming of poly(A) tails
@@ -68,3 +68,14 @@ If your sample has poly(A) tails, use --require-polya. This filters for FL reads
 ```bash
 isoseq refine duck.NEB_5p--NEB_Clontech_3p.fl.bamduck.flnc.bam --require-polya
 ```
+## TAMA steps
+### Step 4: Collapse 
+TAMA Collapse is a tool that allows you to collapse redundant transcript models in your Iso-Seq data.
+This step takes a bam/sam file from the transcript mapping and collapses redundant transcripts based on genomic location.
+
+also provides the following information:
+
+Source information for each predicted feature
+Variation calling
+Genomic poly-A detection
+Strand ambiguity
