@@ -1,10 +1,24 @@
 # Iso-seq data pipeline
 
 ## PacBio concepts
+PacBio SMRT sequencing operates within a silicon chip (**SMRTcell**) fabricated to contain a large number of microscopic holes (**ZMWs**, or zero-mode waveguides), each assigned a hole number.
+
+Within a ZMW, PacBio SMRT sequencing is performed on a circularized molecule called a **SMRTbell**. The SMRTbell, depicted below, consists of:
+
+* the customer’s double-stranded DNA insert (I)
+* (optional) double-stranded DNA barcodes (sequences BL, BR) used for multiplexing DNA samples. While the barcodes are optional, they must be present at both ends if present at all.
+* SMRTbell adapters (sequences AL, AR), each consisting of a double stranded stem and a single-stranded hairpin loop. 
+  
+![image](https://user-images.githubusercontent.com/31697487/135611262-770421a4-0538-4738-865b-750f25bae351.png)
+  
+Specifically the raw data or each SMRT-cell will be in files named  ```.subreads.bam```,  ```.subreads.xml```, and  ```.subreads.pbi```.
+
+The ```.bam data``` can be converted to fastq or fasta files with bamtools.
+
 
 ### What is Circular Consensus Sequence or ccs?
 ccs combines multiple subreads of the same SMRTbell molecule using a statistical model to produce one highly accurate consensus sequence, also called a HiFi read.
-Single Molecule, Real-Time (SMRT) Sequencing technology has evolved to a different type of long read, known as highly accurate long reads, or HiFi reads. PacBio is the only sequencing technology to offer HiFi reads that provide accuracy of >99.9%, on par with short reads and Sanger sequencing.
+Single Molecule, Real-Time (SMRT) Sequencing technology has evolved to a different type of long read, known as highly accurate long reads, or **HiFi reads**. PacBio is the only sequencing technology to offer HiFi reads that provide accuracy of >99.9%, on par with short reads and Sanger sequencing.
  
  
 ![alt text](https://ccs.how/img/generate-hifi.png)
