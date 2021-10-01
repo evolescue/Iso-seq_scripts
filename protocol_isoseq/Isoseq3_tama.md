@@ -92,7 +92,8 @@ This step takes the FLNC reads and clusters the transcript sequences by similari
 ```bash
 isoseq cluster flnc.fofn clustered.bam --verbose --use-qvs
   ```
-
+   
+more info of [Isoseq3 pipeline](https://github.com/PacificBiosciences/IsoSeq/blob/master/isoseq-clustering.md)
 
 ## Step 4: Mapping reads against genome with Minimap2
 This step can take inputs from either the FLNC reads or the Polished reads. Minimap2 maps the transcript sequences onto a genome assembly.
@@ -119,6 +120,8 @@ Also provides the following information:
 ```bash
 python tama_collapse.py -s duck_aln.sam -f genome_duck_ref.fa -p prefix -x capped
 ```
+more info of [TAMA Collapse](https://github.com/GenomeRIK/tama/wiki/Tama-Collapse)
+
 ## Step 5: Merge
 Merging is the process of combining multiple transcriptomes. For instance, if you have Iso-Seq data for different tissue types you might want to process them separately and then combine them at the end to use as a transcriptome for downstream analysis. However, the act of merging transcriptomes is non-trivial with respect to choosing what criteria to use to merge transcript models. You probably would also like to keep a record of which models from your merged transcriptome came from which source. 
 ```bash
@@ -126,3 +129,4 @@ python tama_merge.py -f filelist.txt -p merged_annos
 ```
 NOTE: If you do not see "TAMA Merge has completed successfully!" as the last line of the terminal output, then TAMA Merge has not completed and there are likely issues with the input files.
 
+more info of [TAMA Merge](https://github.com/GenomeRIK/tama/wiki/Tama-Merge)
