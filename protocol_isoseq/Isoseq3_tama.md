@@ -73,9 +73,14 @@ isoseq refine duck.NEB_5p--NEB_Clontech_3p.fl.bamduck.flnc.bam --require-polya
 TAMA Collapse is a tool that allows you to collapse redundant transcript models in your Iso-Seq data.
 This step takes a bam/sam file from the transcript mapping and collapses redundant transcripts based on genomic location.
 
-also provides the following information:
+also provides the following information: Source information for each predicted feature, Variation calling, Genomic poly-A detection and Strand ambiguity
+```bash
+python tama_collapse.py -s mapped_reads.sam -f genome.fa -p prefix -x capped
+```
+### Step 5: Merge
+Merging is the process of combining multiple transcriptomes. For instance, if you have Iso-Seq data for different tissue types you might want to process them separately and then combine them at the end to use as a transcriptome for downstream analysis. However, the act of merging transcriptomes is non-trivial with respect to choosing what criteria to use to merge transcript models. You probably would also like to keep a record of which models from your merged transcriptome came from which source. 
+```bash
+python tama_merge.py -f filelist.txt -p merged_annos
+```
+NOTE: If you do not see "TAMA Merge has completed successfully!" as the last line of the terminal output, then TAMA Merge has not completed and there are likely issues with the input files.
 
-Source information for each predicted feature
-Variation calling
-Genomic poly-A detection
-Strand ambiguity
