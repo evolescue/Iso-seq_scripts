@@ -1,6 +1,6 @@
-# Isoseq3 and TAMA pipeline using Iso-seq data
+# Iso-seq data pipeline
 
-## Pacbio essencials
+## PacBio concepts
 
 ### What is Circular Consensus Sequence or ccs?
 ccs combines multiple subreads of the same SMRTbell molecule using a statistical model to produce one highly accurate consensus sequence, also called a HiFi read.
@@ -9,6 +9,9 @@ Single Molecule, Real-Time (SMRT) Sequencing technology has evolved to a differe
  
 ![alt text](https://ccs.how/img/generate-hifi.png)
 
+
+## Step 0: Input
+For each SMRT cell a duck.subreads.bam is needed for processing.
 
 ## Step 1: Circular Consensus Sequence (ccs) calling 
 
