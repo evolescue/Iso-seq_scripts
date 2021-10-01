@@ -43,7 +43,7 @@ or use samtools
 ```bash
 samtools merge -@8 duck.ccs.bam duck.ccs.*.bam
 ```
-## Step 2: Primer removal and demultiplexing with lima
+## Step 2: Primer removal and demultiplexing 
 Removal of primers and identification of barcodes is performed using lima that offers a specialized ```--isoseq``` mode. 
 If there are more than two sequences in your primer.fasta file or better said more than one pair of 5' and 3' primers.
 Use lima with ```--peek-guess``` to remove spurious false positive signal. Lima will remove unwanted combinations and orient sequences to 5' → 3' orientation.
@@ -76,7 +76,7 @@ ls bird*.flnc.bam bird*.flnc.bam bird*.flnc.bam > flnc.fofn
  ```
 
 ## Step 4: Clustering (optional)
-This step takes the FLNC reads and clusters the transcript sequences by similarity. It then makes a multiple alignment of each cluster and performs error correction using this alignment. This step is optional and if you are interested in allele specific expression/transcript phasing, you should not run this step as it can removed allele specific sequence variation.
+This step takes the FLNC reads and clusters the transcript sequences by similarity. It then makes a multiple alignment of each cluster and performs error correction using this alignment. This step is optional and if you are interested in allele specific expression/transcript phasing, you should not run this step as it can removed allele specific sequence variation. Give this step as many cores as possible
 
 * **Input** The input file for cluster is one FLNC file:
 ```<movie>.flnc.bam``` or ```flnc.fofn```
@@ -96,7 +96,12 @@ isoseq cluster flnc.fofn clustered.bam --verbose --use-qvs
 
 ## Step 4: Mapping reads against genome with Minimap2
 This step can take inputs from either the FLNC reads or the Polished reads. Minimap2 maps the transcript sequences onto a genome assembly.
+```bash
+minimap2 -ax splice -uf -C5 SIRV_E2.fa SIRV_iso-seq.fq > aln.sam
+```
+Option ```-C5``` reduces the penalty on non-canonical splicing sites. It helps to align such sites correctly for data with low error rate such as Iso-seq reads and traditional cDNAs. On this example, minimap2 makes one junction error. Applying ```--splice-flank=no``` fixes this alignment error.
 
+Note that the command line above is optimized for the final Iso-seq reads. PacBio's Iso-seq pipeline produces intermediate sequences at varying quality. For example, some intermediate reads are not stranded. For these reads, option -uf will lead to more errors. Please revise the minimap2 command line accordingly.
 ## Step 5: Collapse 
 TAMA Collapse is a tool that allows you to collapse redundant transcript models in your Iso-Seq data.
 This step takes a bam/sam file from the transcript mapping and collapses redundant transcripts based on genomic location.
