@@ -70,16 +70,16 @@ isoseq refine duck.NEB_5p--NEB_Clontech_3p.fl.bamduck.flnc.bam --require-polya
 ```
 
 ## Step 3b: Merge SMRT Cells (optional)
-If you used more than one SMRT cells, list all of your ```<bird>.flnc.bam``` in one ```flnc.fofn```, a file of filenames:
+If you used more than one SMRT cells, list all of your ```<duck>.flnc.bam``` in one ```flnc.fofn```, a file of filenames:
 ```bash
-ls bird*.flnc.bam bird*.flnc.bam bird*.flnc.bam > flnc.fofn
+ls duck*.flnc.bam duck*.flnc.bam duck*.flnc.bam > flnc.fofn
  ```
 
 ## Step 4: Clustering (optional)
 This step takes the FLNC reads and clusters the transcript sequences by similarity. It then makes a multiple alignment of each cluster and performs error correction using this alignment. This step is optional and if you are interested in allele specific expression/transcript phasing, you should not run this step as it can removed allele specific sequence variation. Give this step as many cores as possible
 
 * **Input** The input file for cluster is one FLNC file:
-```<movie>.flnc.bam``` or ```flnc.fofn```
+```<duck>.flnc.bam``` or ```flnc.fofn```
 
 * **Output** The following output files of cluster contain polished isoforms:
 
@@ -97,11 +97,15 @@ isoseq cluster flnc.fofn clustered.bam --verbose --use-qvs
 ## Step 4: Mapping reads against genome with Minimap2
 This step can take inputs from either the FLNC reads or the Polished reads. Minimap2 maps the transcript sequences onto a genome assembly.
 ```bash
-minimap2 -ax splice -uf -C5 SIRV_E2.fa SIRV_iso-seq.fq > aln.sam
+minimap2 -ax splice -uf -C5 genome_duck_ref.fa duck_iso-seq.fq > duck_aln.sam
 ```
 Option ```-C5``` reduces the penalty on non-canonical splicing sites. It helps to align such sites correctly for data with low error rate such as Iso-seq reads and traditional cDNAs. On this example, minimap2 makes one junction error. Applying ```--splice-flank=no``` fixes this alignment error.
+splice:hq?
+  
+more info in [Minimap2](https://github.com/lh3/minimap2)
 
 Note that the command line above is optimized for the final Iso-seq reads. PacBio's Iso-seq pipeline produces intermediate sequences at varying quality. For example, some intermediate reads are not stranded. For these reads, option -uf will lead to more errors. Please revise the minimap2 command line accordingly.
+
 ## Step 5: Collapse 
 TAMA Collapse is a tool that allows you to collapse redundant transcript models in your Iso-Seq data.
 This step takes a bam/sam file from the transcript mapping and collapses redundant transcripts based on genomic location.
@@ -113,7 +117,7 @@ Also provides the following information:
 * Strand ambiguity
 
 ```bash
-python tama_collapse.py -s mapped_reads.sam -f genome.fa -p prefix -x capped
+python tama_collapse.py -s duck_aln.sam -f genome_duck_ref.fa -p prefix -x capped
 ```
 ## Step 5: Merge
 Merging is the process of combining multiple transcriptomes. For instance, if you have Iso-Seq data for different tissue types you might want to process them separately and then combine them at the end to use as a transcriptome for downstream analysis. However, the act of merging transcriptomes is non-trivial with respect to choosing what criteria to use to merge transcript models. You probably would also like to keep a record of which models from your merged transcriptome came from which source. 
