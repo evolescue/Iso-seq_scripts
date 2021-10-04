@@ -25,7 +25,7 @@ Single Molecule, Real-Time (SMRT) Sequencing technology has evolved to a differe
 
 
 ## Step 0: Input
-For each SMRT cell a duck.subreads.bam is needed for processing.
+For each SMRT cell a ```duck.subreads.bam``` is needed for processing.
 
 ## Step 1: Circular Consensus Sequence (ccs) calling 
 
