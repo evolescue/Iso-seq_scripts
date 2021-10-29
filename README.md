@@ -135,8 +135,16 @@ Also provides the following information:
 * Strand ambiguity
 
 ```bash
-python tama_collapse.py -s duck_aln.sam -f genome_duck_ref.fa -p prefix -x capped
+python $tama_dir/tama_collapse.py -s $tamaout_path/$name.aln.sort.sam -f $genome_ref -p $name_out -x capped -a 100 -z 100 -lde 5 -sj sj_priority -sjt 20
 ```
+**x:** If you performed 5' cap selection during your Iso-Seq library preparation you should use the "-x capped" option. This will not allow transcripts to be collapses if they have a different number of exons.  
+**a:** The 5 prime threshold is the amount of tolerance at the 5' end of the transcript for grouping reads to be collapsed.  
+**z:** The 3 prime threshold is the amount of tolerance for the 3' end of the transcript for grouping reads to be collapsed.  
+**sj:** I call this option splice junction priority. Basically if you turn this on, TAMA Collapse will search for mismatches in the regions on each side of each splice junction. The length of the regions are defined by the SJT flag. TAMA Collapse will then rank the splice junction evidence from each transcript/read as either 0, 1, 2, or 3 with 0 being highest priroity.   
+**lde:** This is the Threshold for the number of errors that is allowed to occur on each side of the splice junction within the range specified by the -sjt argument.This feature is used to remove mapped reads where the splice junction mapping is likely to be erroneous due to a high local density of errors near the splice junction.  
+**sjt:** This is the length threshold for the regions to observe for splice junction priority. The default is 10bp which means TAMA collapse will look at the 10bp region upstream and downstream of the splice junction.  
+
+Command used in human transcriptome: TAMA collapse (−d merge_dup -x no_cap -a 100 -z 100 -sj sj_priority -lde 5 -sjt 20 -log log_off)
 more info of [TAMA Collapse](https://github.com/GenomeRIK/tama/wiki/Tama-Collapse)
 
 ## Step 5: Merge
@@ -148,3 +156,95 @@ NOTE: If you do not see "TAMA Merge has completed successfully!" as the last lin
 
 more info of [TAMA Merge](https://github.com/GenomeRIK/tama/wiki/Tama-Merge)
 
+## Step 6: TAMA GO
+### 1. Converting the bed files into fasta files
+Use Bedtools to convert your bed file into a fasta file. (Bedtools 2.26.0 or newer)
+
+```bash
+${bedtools} getfasta -name -split -s -fi ${genome_ref} -bed ${bed} -fo ${outfile}
+```
+fasta - this is the fasta file for the genome assembly  
+bed - this is the bed12 file for the annotation  
+outfile - this is the name of the output fasta file  
+
+The output fasta headers should look like this:
+
+```bash
+  >G1;G1.1::1:29-2665(+)
+  >G1;G1.2::1:219-3261(+)
+  >G1;G1.3::1:1713-3246(+)
+```
+### 2. Getting open read frames (ORF) from the transcript sequences
+Use tama_orf_seeker.py to get ORF amino acid sequences.
+
+```bash
+python ${tama_dir}/tama_go/orf_nmd_predictions/tama_orf_seeker.py -f ${mergefasta} -o ${outfile}_orf
+```
+
+fasta - this is the fasta file for your transcript sequences that you produced in the previous step  
+outfile - the name of the output fasta file which contains the ORF amino acid sequences  
+
+The output fasta file should have headers like this:
+```bash
+  >G1;G1.1::1:29-2665(+):F1:0:719:1:239:239:I
+  >G1;G1.1::1:29-2665(+):F1:132:719:45:239:195:M
+  >G1;G1.1::1:29-2665(+):F3:2:64:1:20:20:F
+```
+
+### 3. Blasting the amino acid sequences against the Uniprot/Uniref protein database
+Use blastp and a local Uniref database to find protein hits. (BLAST 2.2.31+ or newer)  
+uniref - Uniref/Uniprot fasta file  
+orf - ORF fasta file from previous step  
+```bash
+${blastp} -evalue 1e-10 -num_threads 16 -db ${uniref} -query ${orf} > ${name_out}.blastp 
+```
+
+The individual hit entries in the output file should look like this:
+```bash
+  >E1C721 Uncharacterized protein OS=Gallus gallus GN=LOC425783 PE=4 SV=2
+  Length=265
+  
+   Score = 382 bits (982),  Expect = 4e-136, Method: Compositional matrix adjust.
+   Identities = 203/235 (86%), Positives = 209/235 (89%), Gaps = 12/235 (5%)
+    
+  Query  17   KSVLAKKSAPPAPLCPQPGPSLPLSPHTMGAVPHLHGAKGERERRSPSPPREATAREGDE  76
+              + VLAKKSAPPAPLCPQPGPSLPLSPHTMGAVPHLHGAKGERERRSPSPPREATAREGDE
+  Sbjct  31   REVLAKKSAPPAPLCPQPGPSLPLSPHTMGAVPHLHGAKGERERRSPSPPREATAREGDE  90
+```
+### 4. Parsing the Blastp output file for top hits
+Use tama_orf_blastp_parser.py to parse the results from Blastp.
+
+```bash
+python ${tama_dir}/tama_go/orf_nmd_predictions/tama_orf_blastp_parser.py -b ${name_out}.blastp -o ${outfile}_blastparser
+```
+
+If you did a BlastP on an Ensembl CDS peptide sequence database, you can add "-f ensembl" to the command line to allow for parsing of the Ensembl ID's.
+
+The output should look like this:  
+```bash
+  G1;G1.1 F1      0       719     1       239     R4GL70  90_match        99      32
+  G1;G1.2 F1      369     596     124     198     R4GIW7  50_match        77      66
+  G1;G1.3 F1      0       386     1       128     H9KZN5  90_match        91      65
+  ```
+### 5. Create new bed file with CDS regions
+Use tama_cds_regions_bed_add.py to create the annotation bed file with CDS regions added.  
+orf - The output file from the previous step  
+bed - The bed annotation file that you started with in this pipeline  
+fasta - The transcript input fasta file from the first step (the input fasta)  
+outfile - The output bed file with CDS regions  
+
+```bash
+python ${tama_dir}/tama_go/orf_nmd_predictions/tama_cds_regions_bed_add.py -p ${outfile}_blastparser -a ./${name_out}/${bed} -f ${mergefasta} -o ${name_out}.cds
+```
+
+### 6. Explanation of final output
+The output of step 5 is a bed file with CDS regions defined by column 7 and 8. Column 7 is the start of the CDS region and column 8 is the end. The 4th column contains the gene ID and transcript ID along with additional information.
+
+This is the format of the 4th column:  
+
+**gene_id;trans_id;gene_name;trans_length_flag;blastp_match_flag;nmd_flag;frame**
+
+This is an example of a line:
+```bash
+  1       219     3261    G1;G1.2;R4GIW7;full_length;50_match;prot_ok;F1  40      +       2154    2662    200,0,255       5       98,93,181,107,714       0,1457,1757,2132,2328
+```
